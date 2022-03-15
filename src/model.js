@@ -1,3 +1,13 @@
+function getItemPerNameOrCreate(arr, name, creator) {
+    const existing = arr.find(a => a.name === name)
+    if (existing) {
+        return existing;
+    }
+    const created = creator();
+    arr.push(created)
+    return created
+}
+
 export class CommandInformation {
     constructor(name) {
         this.name = name
@@ -14,6 +24,9 @@ export class CommandInformation {
 
     getWidth(context) {
         const views = this.getViews(context);
+        if(this.events.length >= views.length + 1) {
+            return this.events.length;
+        }
         return this.events.length + views.length
     }
 
@@ -30,13 +43,7 @@ export class AggregateInformation {
     commands = []
 
     getCommand(name) {
-        const existing = this.commands.find(a => a.name === name)
-        if (existing) {
-            return existing;
-        }
-        const created = new CommandInformation(name);
-        this.commands.push(created)
-        return created
+        return getItemPerNameOrCreate(this.commands, name, () => new CommandInformation(name))
     }
 
     getWidth(context) {
@@ -78,23 +85,11 @@ export class DiagramContext {
     }
 
     getView(name) {
-        const existing = this.views.find(a => a.name === name)
-        if (existing) {
-            return existing;
-        }
-        const created = new ViewInformation(name);
-        this.views.push(created)
-        return created
+        return getItemPerNameOrCreate(this.views, name, () => new ViewInformation(name))
     }
 
     getAggregate(name) {
-        const existing = this.aggregates.find(a => a.name === name)
-        if (existing) {
-            return existing;
-        }
-        const created = new AggregateInformation(name);
-        this.aggregates.push(created)
-        return created
+        return getItemPerNameOrCreate(this.aggregates, name, () => new AggregateInformation(name))
     }
 
     isEmpty() {
@@ -118,26 +113,39 @@ export class DiagramContext {
     }
 }
 
-export class DiagramInformation {
-    contexts = [];
+export class Saga {
+    origins = [];
+    destinations = [];
 
-    getContext(name) {
-        const existing = this.contexts.find(a => a.name === name)
-        if (existing) {
-            return existing;
-        }
-        const created = new DiagramContext(name);
-        this.contexts.push(created)
-        return created
+    constructor(name) {
+        this.name = name
     }
 
-    getWidthOffset(name) {
+    addOrigin(originContext, originEvent) {
+
+    }
+}
+
+export class DiagramInformation {
+    contexts = [];
+    sagas = []
+
+    getContext(name) {
+        return getItemPerNameOrCreate(this.contexts, name, () => new DiagramContext(name))
+    }
+
+    getSaga(name) {
+        return getItemPerNameOrCreate(this.sagas, name, () => new Saga(name))
+    }
+
+
+    getOffsetX(name) {
         const item = this.contexts.find(a => a.name === name)
         const index = this.contexts.indexOf(item)
         return this.contexts.slice(0, index).reduce((a, c) => a + c.width, 0)
     }
 
-    getHeightOffset(name) {
+    getOffsetY(name) {
         const item = this.contexts.find(a => a.name === name)
         const index = this.contexts.indexOf(item)
         return this.contexts.slice(0, index).reduce((a, c) => a + c.height, 0)

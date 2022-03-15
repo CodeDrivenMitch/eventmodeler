@@ -9,6 +9,7 @@ import {parse} from './parser'
 function App() {
     const [value, setValue] = useState(defaultValue)
     const model = parse(value);
+    console.log(JSON.stringify(model, null, 4))
     return (
         <div className="App">
             <Container fluid>
@@ -49,7 +50,7 @@ function App() {
     );
 }
 
-function Sticky({text, color, x, y, width = 200, height = 76, fontSize = 18}) {
+function Sticky({text, color, x, y, width = 200, height = 76, fontSize = 14}) {
     const rectRef = useRef()
     const [offset, setOffset] = useState(-1)
     useEffect(() => {
@@ -57,7 +58,7 @@ function Sticky({text, color, x, y, width = 200, height = 76, fontSize = 18}) {
     }, [rectRef.current, rectRef.current?.textWidth]);
 
     return <Group x={x - width / 2} y={y - height / 2}>
-        <Rect width={width} height={height} fill={color} stroke="black" strokeWidth={3}/>
+        <Rect width={width} height={height} fill={color} stroke="black" strokeWidth={1}/>
         <Text ref={rectRef} width={width - 10} padding={10} x={offset} y={height / 2 - fontSize / 2 - 10}
               text={text} ellipsis={true} wrap={'none'} fontSize={fontSize}/>
     </Group>
@@ -103,18 +104,18 @@ function calculateGridY(row) {
  * @constructor
  */
 function Context({model, context}) {
-    const modelWidthOffset = model.getWidthOffset(context.name)
+    const modelWidthOffset = model.getOffsetX(context.name)
     return <Group>
-        {context.aggregates.map((a, index) => {
-            const heightOffset = model.getHeightOffset(context.name);
+        {context.aggregates.map((a) => {
+            const heightOffset = model.getOffsetY(context.name);
             const widthOffset = modelWidthOffset + context.getWidthOffset(a.name)
             return <Group key={a.name}>
-                <Sticky color={"#4ac21c"}
+                <Sticky color={"#f6D644"}
                         text={a.name}
                         x={calculateGridX(entityColumn)}
                         y={calculateGridY(heightOffset + commandColumnStart)}/>
 
-                {a.commands.map((c, cIndex) => {
+                {a.commands.map((c) => {
                     const commandOffset = a.getWidthOffsetOfCommand(c.name, context)
                     const views = a.getCommand(c.name).getViews(context)
                     const commandX = calculateGridX(widthOffset + commandOffset);
@@ -133,38 +134,50 @@ function Context({model, context}) {
                     })
 
                     return <Group key={c.name}>
-                        <Sticky color={"#05dde5"}
-                                x={commandX}
-                                y={commandY}
-                                text={c.name}/>
 
                         {eventDefinition.map((event) => {
                             const viewArrows = viewDefinitions.filter(v => v.v.events.includes(event.e))
                             console.log(viewArrows)
                             return <Group key={event.event}>
-                                <Sticky
-                                    color={"orange"}
-                                    x={event.eventX}
-                                    y={event.eventY} text={event.e}/>
                                 <Arrow
-                                    stroke={"black"}
-                                    fill={"black"}
-                                    points={[commandX, commandY + 38, event.eventX, event.eventY - 38]}/>
+                                    stroke={"#A7CDF5"}
+                                    fill={"#A7CDF5"}
+                                    points={[
+                                        commandX, commandY + 38,
+                                        commandX, commandY + 78,
+                                        event.eventX, commandY + 88,
+                                        event.eventX, event.eventY - 38,
+                                    ]}/>
 
                                 {viewArrows.map(va => {
                                     return <Arrow
                                         key={va.v}
-                                        stroke={"black"}
-                                        fill={"black"}
-                                        points={[event.eventX + 100, event.eventY, va.viewX, va.viewY + 38]}/>
+                                        stroke={"#FFA85D"}
+                                        fill={"#FFA85D"}
+                                        tension={0}
+                                        points={[
+                                            event.eventX + 100, event.eventY,
+                                            event.eventX + 120, event.eventY,
+                                            event.eventX + 120, va.viewY + 68,
+                                            va.viewX, va.viewY + 68,
+                                            va.viewX, va.viewY + 38,
+                                        ]}/>
                                 })}
+                                <Sticky
+                                    color={"#FFA85D"}
+                                    x={event.eventX}
+                                    y={event.eventY} text={event.e}/>
                             </Group>
                         })}
 
 
                         {viewDefinitions.map((v) => {
-                            return <Sticky color={"green"} key={v.name} text={v.v.name} x={v.viewX} y={v.viewY}/>
+                            return <Sticky color={"#A1D786"} key={v.name} text={v.v.name} x={v.viewX} y={v.viewY}/>
                         })}
+                        <Sticky color={"#A7CDF5"}
+                                x={commandX}
+                                y={commandY}
+                                text={c.name}/>
                     </Group>
                 })}
             </Group>

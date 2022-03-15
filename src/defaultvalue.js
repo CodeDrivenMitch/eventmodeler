@@ -11,9 +11,9 @@ export const defaultValue = "" +
     "\n" +
     "# the Booking context is called through a saga\n" +
     "context Booking \n" +
-    "s BookingInventory :: RoomAddedToInventory -> AddRoom  \n" +
+    "s BookingInventory :: Inventory RoomAddedToInventory -> Booking AddRoom  \n" +
     "a Room :: AddRoom -> RoomAdded \n" +
-    "s BookingInventory :: RoomAdded -> MarkRoomAsAddedToBookingSystem  \n" +
+    "s BookingInventory :: Booking RoomAdded -> Inventory MarkRoomAsAddedToBookingSystem  \n" +
     "\n" +
     "\n" +
     "# And the saga calls back the inventory context\n" +
