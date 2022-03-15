@@ -1,12 +1,20 @@
-import {DiagramInformation} from "./model";
+import {DiagramInformation, Saga} from "./model";
 
 
-const contextRegex = /^context (.*)$/i
-const modelRegex = /^(Saga|Aggregate|View|Agg|a|v|s) (.*) $/i
+const contextRegex = /^context (\w+)+(\s[1]\w+)*$/i
+const modelRegex = /^(\w+)\s+(\w+)\s*$/i
+const aliasRegex = /^(\w+)\s+(\w+)\s(\w+)\s*$/i
 const definitionRegex = /^(.*)::(.*)$/i
 
-export function parse(value ) {
-    const lines = value.split("\n").filter(i => i.length > 0 && !i.startsWith('#'))
+const mappings = {
+    saga: ['saga', 's'],
+    context: ['context', 'cont', 'c'],
+    aggregate: ['aggregate', 'agg', 'a'],
+    view: ['view', 'vw', 'v'],
+}
+
+export function parse(value) {
+    const lines = value.split("\n").filter(i => i.length > 0 && !i.startsWith('#')).map(l => l.trim())
     let currentContext = null
 
     const diagram = new DiagramInformation();
@@ -22,10 +30,28 @@ export function parse(value ) {
         getContext().getAggregate(agg).getCommand(command).addEvent(event.trim())
     }
 
+    const aliases = {
+        context: {},
+        aggregate: {},
+        saga: {},
+        view: {},
+    }
+
+    function resolveForAlias(type, name) {
+        if (aliases[type][name]) {
+            return aliases[type][name]
+        }
+        return name
+    }
+
     lines.forEach(line => {
 
         if (contextRegex.test(line)) {
-            currentContext = contextRegex.exec(line)[1].trim()
+            const contextResult = contextRegex.exec(line);
+            if (contextResult[2]) {
+                aliases[contextResult[2]] = contextResult[1]
+            }
+            currentContext = contextResult[1].trim()
             return;
         }
 
@@ -37,22 +63,56 @@ export function parse(value ) {
             if (modelRegex.test(model)) {
                 const type = modelRegex.exec(model)[1].toLowerCase().trim()
                 const name = modelRegex.exec(model)[2].trim()
-                if (['v', 'view'].includes(type)) {
-                    addEventsToView(name.trim(), reference.split(","));
-                } else if (['a', 'agg', 'aggregate'].includes(type)) {
+                if (mappings.view.includes(type)) {
+                    addEventsToView(resolveForAlias('view', name.trim()), reference.split(","));
+                    return
+                }
+                if (mappings.aggregate.includes(type)) {
                     const parts = reference.split('->')
                     if (parts.length === 2) {
                         //valid definition
-                        parts[1].split(",").forEach(i => addEventToCommand(name.trim(), parts[0].trim(), i))
+                        parts[1].split(",").forEach(i => addEventToCommand(resolveForAlias('aggregate', name.trim()), parts[0].trim(), i))
+                    }
+                    return
+                }
+                if(mappings.saga.includes(type)) {
+                    const parts = reference.split('->')
+                    if (parts.length === 2) {
+                        const from = parts[0].trim().split(' ')
+                        const to = parts[1].trim().split(' ')
+                        if(from.length === 2 && to.length === 2) {
+                            diagram.addSaga(new Saga(
+                                name,
+                                resolveForAlias('context', from[0].trim()),
+                                from[1].trim(),
+                                resolveForAlias('context', to[0].trim()),
+                                to[1].trim(),
+                            ))
+                        }
                     }
                 }
-            } else {
-                throw new Error("Invalid model definition")
+            }
+            return;
+        }
+
+        if (aliasRegex.test(line)) {
+            const [, type, name, alias] = aliasRegex.exec(line)
+            // Alias
+            if (mappings.view.includes(type)) {
+                aliases.view[alias] = name
+            }
+            if (mappings.context.includes(type)) {
+                aliases.context[alias] = name
+            }
+            if (mappings.saga.includes(type)) {
+                aliases.saga[alias] = name
+            }
+            if (mappings.aggregate.includes(type)) {
+                aliases.aggregate[alias] = name
             }
         }
     })
 
     diagram.pruneEmpty()
-
     return diagram
 }
