@@ -80,7 +80,8 @@ function Sticky({text, color, x, y, width = 220, height = 76, fontSize = 14, pad
  * @constructor
  */
 function DiagramEntities({model}) {
-    return <Stage height={0.73 * window.innerHeight} width={columnWidth + padding} style={{position: 'absolute', backgroundColor: 'white'}}>
+    return <Stage height={0.73 * window.innerHeight} width={columnWidth + padding}
+                  style={{position: 'absolute', backgroundColor: 'white'}}>
         <Layer>
             {model.contexts.map(c => {
                 return <ContextEntities key={c.name} model={model} context={c}/>
@@ -97,15 +98,83 @@ function DiagramEntities({model}) {
  * @constructor
  */
 function DiagramRendered({model}) {
-    console.log(model.sagas.filter(s => s.isValid(model)))
-    console.log(model.sagas.map(s => s.getColumnStart(model)))
     return <Stage height={0.73 * window.innerHeight} width={10000} style={{float: 'left', marginLeft: columnWidth}}>
         <Layer>
             {model.contexts.map(c => {
                 return <Context key={c.name} model={model} context={c}/>
             })}
         </Layer>
+        <Sagas model={model}/>
     </Stage>
+}
+
+/**
+ *
+ * @param {DiagramInformation} model
+ * @returns {JSX.Element}
+ * @constructor
+ */
+function Sagas({model}) {
+    const sagas = model.sagas.filter(s => s.isValid(model))
+    return <Layer>
+        {sagas.map((s, sagaIndex) => {
+
+            const sagaX = s.getColumnStart(model)
+            const sagaY = 0
+
+
+            const originContext = model.getContext(s.originContext)
+            const originOffsetX = model.getOffsetX(s.originContext)
+            const originOffsetY = model.getOffsetY(s.originContext);
+
+            const originCoords = originContext.getAggregatesWithEvent(s.originEvent)
+                .map(a => {
+                    const commands = a.getCommandsWithEvent(s.originEvent)
+                    return commands.map(c => {
+                        return [
+                            originOffsetX + a.getWidthOffsetOfCommand(c.name, originContext) + c.events.indexOf(s.originEvent),
+                            originOffsetY + originContext.aggregates.findIndex(a2 => a2.name === a.name) + eventRowStart]
+                    })
+                }).flat()
+
+            const destinationContext = model.getContext(s.destinationContext)
+            const destinationOffsetX = model.getOffsetX(s.destinationContext)
+            const destinationCoords = destinationContext.getAggregatesWithCommand(s.destinationCommand).map(a => {
+                return [destinationOffsetX + a.getWidthOffsetOfCommand(s.destinationCommand, destinationContext), 1]
+            })
+
+            return (
+                <Group>
+                    <Sticky text={s.name} x={calculateGridX(sagaX)} y={calculateGridY(sagaY)}/>
+                    {originCoords.map(([x, y]) => {
+                        return <Arrow key={`${x}-${y}`}
+                                      stroke={"#FFA85D"}
+                                      fill={"#FFA85D"}
+                                      points={[
+                                          calculateGridX(x) + 100, calculateGridY(y),
+                                          calculateGridX(x) + 120, calculateGridY(y),
+                                          calculateGridX(sagaX) - 130, calculateGridY(sagaY),
+                                          calculateGridX(sagaX) - 110, calculateGridY(sagaY),
+                                      ]}/>
+                    })}
+                    {destinationCoords.map(([x, y], index) => {
+                        const yOfLine = 50 + (10 * (index + originCoords.length + sagaIndex))
+                        return <Arrow key={`${x}-${y}`}
+                                      stroke={"#A7CDF5"}
+                                      fill={"#A7CDF5"}
+                                      points={[
+                                          calculateGridX(sagaX) + 110, calculateGridY(sagaY),
+                                          calculateGridX(sagaX) + 130, calculateGridY(sagaY),
+                                          calculateGridX(sagaX) + 130, calculateGridY(sagaY) + yOfLine,
+                                          calculateGridX(x), calculateGridY(sagaY) + yOfLine,
+                                          calculateGridX(x), calculateGridY(y) - 40,
+                                      ]}/>
+
+                    })}
+                </Group>
+            );
+        })}
+    </Layer>
 }
 
 const columnWidth = 250;
@@ -131,13 +200,13 @@ function calculateGridY(row) {
  */
 function ContextEntities({model, context}) {
     return <Group>
-        {context.aggregates.map((a) => {
+        {context.aggregates.map((a, index) => {
             const heightOffset = model.getOffsetY(context.name);
             return <Group key={a.name}>
                 <Sticky color={"#f6D644"}
                         text={a.name}
                         x={calculateGridX(0)}
-                        y={calculateGridY(heightOffset + commandColumnStart)}/>
+                        y={calculateGridY(heightOffset + commandColumnStart + index)}/>
             </Group>
         })}
     </Group>
@@ -153,7 +222,7 @@ function ContextEntities({model, context}) {
 function Context({model, context}) {
     const modelWidthOffset = model.getOffsetX(context.name)
     return <Group>
-        {context.aggregates.map((a) => {
+        {context.aggregates.map((a, aggIndex) => {
             const heightOffset = model.getOffsetY(context.name);
             const widthOffset = modelWidthOffset + context.getWidthOffset(a.name)
             return <Group key={a.name}>
@@ -171,7 +240,7 @@ function Context({model, context}) {
 
                     const eventDefinition = c.events.map((e, index) => {
                         const eventX = calculateGridX(widthOffset + index + commandOffset);
-                        const eventY = calculateGridY(heightOffset + eventRowStart);
+                        const eventY = calculateGridY(heightOffset + eventRowStart + aggIndex);
                         return {eventX, eventY, e}
                     })
 
@@ -179,7 +248,6 @@ function Context({model, context}) {
 
                         {eventDefinition.map((event) => {
                             const viewArrows = viewDefinitions.filter(v => v.v.events.includes(event.e))
-                            console.log(viewArrows)
                             return <Group key={event.event}>
                                 <Arrow
                                     stroke={"#A7CDF5"}

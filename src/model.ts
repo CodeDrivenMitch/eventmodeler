@@ -58,7 +58,7 @@ export class AggregateInformation {
         return this.commands.reduce((a, c) => a + c.getColumnSpan(context), 0)
     }
 
-    getCommandsWithEvent(event: string) {
+    getCommandsWithEvent(event: string): CommandInformation[] {
         return this.commands.filter(a => a.events.includes(event))
     }
 
@@ -122,7 +122,7 @@ export class DiagramContext {
     }
 
 
-    getAggregatesWithEvent(event: string) {
+    getAggregatesWithEvent(event: string): AggregateInformation[] {
         return this.aggregates.filter(a => a.getCommandsWithEvent(event).length !== 0)
     }
 

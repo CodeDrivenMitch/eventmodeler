@@ -1,7 +1,7 @@
 import {DiagramInformation, Saga} from "./model";
 
 
-const contextRegex = /^context (\w+)+(\s[1]\w+)*$/i
+const contextRegex = /^context (\w+)+(\s+\w+)*$/i
 const modelRegex = /^(\w+)\s+(\w+)\s*$/i
 const aliasRegex = /^(\w+)\s+(\w+)\s(\w+)\s*$/i
 const definitionRegex = /^(.*)::(.*)$/i
@@ -38,10 +38,10 @@ export function parse(value) {
     }
 
     function resolveForAlias(type, name) {
-        if (aliases[type][name]) {
-            return aliases[type][name]
+        if (aliases[type][name.trim()]) {
+            return aliases[type][name.trim()]
         }
-        return name
+        return name.trim()
     }
 
     lines.forEach(line => {
@@ -49,7 +49,7 @@ export function parse(value) {
         if (contextRegex.test(line)) {
             const contextResult = contextRegex.exec(line);
             if (contextResult[2]) {
-                aliases[contextResult[2]] = contextResult[1]
+                aliases.context[contextResult[2].trim()] = contextResult[1].trim()
             }
             currentContext = contextResult[1].trim()
             return;
@@ -97,22 +97,24 @@ export function parse(value) {
 
         if (aliasRegex.test(line)) {
             const [, type, name, alias] = aliasRegex.exec(line)
+            console.log(type, name, alias)
             // Alias
-            if (mappings.view.includes(type)) {
+            if (mappings.view.includes(type.toLowerCase())) {
                 aliases.view[alias] = name
             }
-            if (mappings.context.includes(type)) {
+            if (mappings.context.includes(type.toLowerCase())) {
                 aliases.context[alias] = name
             }
-            if (mappings.saga.includes(type)) {
+            if (mappings.saga.includes(type.toLowerCase())) {
                 aliases.saga[alias] = name
             }
-            if (mappings.aggregate.includes(type)) {
+            if (mappings.aggregate.includes(type.toLowerCase())) {
                 aliases.aggregate[alias] = name
             }
         }
     })
 
+    console.log(aliases)
     diagram.pruneEmpty()
     return diagram
 }
