@@ -8,6 +8,7 @@ import {parse} from './parser'
 
 function App() {
     const [value, setValue] = useState(defaultValue)
+    const [collapsed, setCollapsed] = useState(false);
     const model = parse(value);
     console.log(JSON.stringify(model, null, 4))
     return (
@@ -25,8 +26,8 @@ function App() {
                     </Col>
                 </Row>
                 <Row>
-                    <Col md={3} style={{"textAlign": "left"}}>
-                    <textarea style={{"width": "20vw", "height": "75vh", "fontSize": 14}} value={value}
+                    <Col md={collapsed ? 0 : 2} style={{"textAlign": "left", display: collapsed ? 'none' : 'block'}}>
+                    <textarea style={{"width": "100%", "height": "75vh", "fontSize": 14}} value={value}
                               onChange={(e) => setValue(e.target.value)}>
                     </textarea>
 
@@ -36,7 +37,7 @@ function App() {
                         {/*            value={'checked'}/>*/}
                         {/*<Form.Check type="checkbox" id={`booking`} label={`Show Booking context`} value={'checked'}/>*/}
                     </Col>
-                    <Col md={9}>
+                    <Col md={collapsed ? 12 : 10}>
                         <div style={{height: "75vh", overflowX: "scroll", display: 'flex'}}>
                             <DiagramRendered model={model}/>
                             <DiagramEntities model={model}/>
@@ -98,7 +99,7 @@ function DiagramEntities({model}) {
  * @constructor
  */
 function DiagramRendered({model}) {
-    return <Stage height={0.73 * window.innerHeight} width={10000} style={{float: 'left', marginLeft: columnWidth}}>
+    return <Stage height={0.73 * window.innerHeight} width={(model.getWidth() + 2) * columnWidth} style={{float: 'left', marginLeft: columnWidth}}>
         <Layer>
             {model.contexts.map(c => {
                 return <Context key={c.name} model={model} context={c}/>
@@ -132,7 +133,7 @@ function Sagas({model}) {
                     const commands = a.getCommandsWithEvent(s.originEvent)
                     return commands.map(c => {
                         return [
-                            originOffsetX + a.getWidthOffsetOfCommand(c.name, originContext) + c.events.indexOf(s.originEvent),
+                            originOffsetX + originContext.getWidthOffset(a.name) + a.getWidthOffsetOfCommand(c.name, originContext) + c.events.indexOf(s.originEvent),
                             originOffsetY + originContext.aggregates.findIndex(a2 => a2.name === a.name) + eventRowStart]
                     })
                 }).flat()

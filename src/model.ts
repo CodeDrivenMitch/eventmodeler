@@ -63,11 +63,10 @@ export class AggregateInformation {
     }
 
     getWidthOffsetOfCommand(name: string, context: DiagramContext) {
-        const item = this.commands.find(a => a.name === name)
-        if (!item) {
-            return null
+        const index = this.commands.findIndex(a => a.name === name)
+        if (index === -1) {
+            return 0
         }
-        const index = this.commands.indexOf(item)
         return this.commands.slice(0, index).reduce((a, c) => a + c.getColumnSpan(context), 0)
     }
 }
@@ -182,6 +181,10 @@ export class DiagramInformation {
 
     addSaga(saga: Saga) {
         return this.sagas.push(saga)
+    }
+
+    getWidth() {
+        return this.contexts.reduce((a, c) => a + c.width, 0)
     }
 
     getOffsetX(name: string) {
