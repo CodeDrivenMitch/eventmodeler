@@ -1,15 +1,27 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
 import {Col, Container, Navbar, NavbarBrand, Row} from "react-bootstrap";
 import {useState} from "react";
 import {Arrow, Group, Layer, Rect, Stage, Text} from "react-konva";
 import {defaultValue} from './defaultvalue'
 import {parse} from './parser'
+import SplitPane from "react-split-pane";
+import RangeSlider from 'react-bootstrap-range-slider';
 
 function App() {
     const [value, setValue] = useState(defaultValue)
-    const [collapsed, setCollapsed] = useState(false);
+    const [width, setWidth] = useState(120);
+    const [padding, setPadding] = useState(10);
+    const [fontSize, setFontSize] = useState(10);
+
     const model = parse(value);
+    const renderingOptions = {
+        width,
+        padding,
+        fontSize,
+        textPadding: 10
+    }
     console.log(JSON.stringify(model, null, 4))
     return (
         <div className="App">
@@ -23,25 +35,50 @@ function App() {
                     <Col style={{"textAlign": "left"}}>
                         <p>Welcome to the Axon Framework event modeler. You can define your input on the left, which
                             will be translated in a diagram on the right. The diagram will be updated automatically.</p>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col md={collapsed ? 0 : 2} style={{"textAlign": "left", display: collapsed ? 'none' : 'block'}}>
-                    <textarea style={{"width": "100%", "height": "75vh", "fontSize": 14}} value={value}
-                              onChange={(e) => setValue(e.target.value)}>
-                    </textarea>
 
-                        {/*<h5>Visualisation options</h5>*/}
-                        {/*<Form.Check type="checkbox" id={`views`} label={`Show views`} value={'checked'}/>*/}
-                        {/*<Form.Check type="checkbox" id={`inventory`} label={`Show Inventory context`}*/}
-                        {/*            value={'checked'}/>*/}
-                        {/*<Form.Check type="checkbox" id={`booking`} label={`Show Booking context`} value={'checked'}/>*/}
-                    </Col>
-                    <Col md={collapsed ? 12 : 10}>
-                        <div style={{height: "75vh", overflowX: "scroll", display: 'flex'}}>
-                            <DiagramRendered model={model}/>
-                            <DiagramEntities model={model}/>
-                        </div>
+                        <SplitPane minSize={100} allowResize={true} primary={"first"} split={"vertical"}
+                                   defaultSize={400}>
+                            <div style={{paddingTop: 30}}>
+                                <RangeSlider
+                                    tooltipLabel={(n) => `Sticky width: ${n}px`}
+                                    value={width}
+                                    max={300}
+                                    min={50}
+                                    tooltip={"on"}
+                                    tooltipPlacement={"top"}
+                                    onChange={changeEvent => setWidth(parseInt(changeEvent.target.value))}
+                                />
+                                <RangeSlider
+                                    tooltipLabel={(n) => `Padding: ${n}px`}
+                                    value={padding}
+                                    max={50}
+                                    min={2}
+                                    tooltip={"on"}
+                                    tooltipPlacement={"top"}
+                                    onChange={changeEvent => setPadding(parseInt(changeEvent.target.value))}
+                                />
+
+                                <RangeSlider
+                                    tooltipLabel={(n) => `Font size: ${n}px`}
+                                    value={fontSize}
+                                    max={50}
+                                    min={2}
+                                    tooltip={"on"}
+                                    tooltipPlacement={"top"}
+                                    onChange={changeEvent => setFontSize(parseInt(changeEvent.target.value))}
+                                />
+                                <textarea
+                                    style={{"width": "98%", "height": "75vh", "fontSize": 14, marginRight: '100px'}}
+                                    value={value}
+                                    onChange={(e) => setValue(e.target.value)}/>
+                            </div>
+                            <div>
+                                <div style={{height: "75vh", overflowX: "scroll", display: 'flex'}}>
+                                    <DiagramRendered renderingOptions={renderingOptions} model={model}/>
+                                    <DiagramEntities renderingOptions={renderingOptions} model={model}/>
+                                </div>
+                            </div>
+                        </SplitPane>
                     </Col>
                 </Row>
                 <Row>
@@ -53,10 +90,11 @@ function App() {
     );
 }
 
-function Sticky({text, color, x, y, width = 220, height = 76, fontSize = 14, padding = 10}) {
-    const textWidth = width - padding * 2
+function Sticky({text, color, x, y, height = 76, fontSize = 14, renderingOptions}) {
+    const width = renderingOptions.width - 2 * renderingOptions.padding
+    const textWidth = width - renderingOptions.textPadding * 2
 
-    return <Group x={x - width / 2} y={y - height / 2}>
+    return <Group x={x - renderingOptions.width * 0.5} y={y - height / 2}>
         <Rect width={width}
               height={height}
               fill={color}
@@ -64,11 +102,11 @@ function Sticky({text, color, x, y, width = 220, height = 76, fontSize = 14, pad
               strokeWidth={1}
         />
         <Text width={textWidth}
-              x={padding}
-              y={height / 2 - fontSize / 1.8}
+              x={renderingOptions.textPadding}
+              y={height / 2 - fontSize }
               align={"center"}
               lineHeight={1.3}
-              text={text} fontSize={fontSize}
+              text={text} fontSize={renderingOptions.fontSize}
         />
     </Group>
 }
@@ -80,12 +118,12 @@ function Sticky({text, color, x, y, width = 220, height = 76, fontSize = 14, pad
  * @returns {JSX.Element}
  * @constructor
  */
-function DiagramEntities({model}) {
-    return <Stage height={0.73 * window.innerHeight} width={columnWidth + padding}
+function DiagramEntities({model, renderingOptions}) {
+    return <Stage height={0.73 * window.innerHeight} width={renderingOptions.width + renderingOptions.padding}
                   style={{position: 'absolute', backgroundColor: 'white'}}>
         <Layer>
             {model.contexts.map(c => {
-                return <ContextEntities key={c.name} model={model} context={c}/>
+                return <ContextEntities key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
             })}
         </Layer>
     </Stage>
@@ -98,24 +136,26 @@ function DiagramEntities({model}) {
  * @returns {JSX.Element}
  * @constructor
  */
-function DiagramRendered({model}) {
-    return <Stage height={0.73 * window.innerHeight} width={(model.getWidth() + 2) * columnWidth} style={{float: 'left', marginLeft: columnWidth}}>
+function DiagramRendered({model, renderingOptions}) {
+    return <Stage height={0.73 * window.innerHeight} width={(model.getWidth() + 2) * renderingOptions.width}
+                  style={{float: 'left', marginLeft: renderingOptions.width + renderingOptions.padding}}>
         <Layer>
             {model.contexts.map(c => {
-                return <Context key={c.name} model={model} context={c}/>
+                return <Context key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
             })}
         </Layer>
-        <Sagas model={model}/>
+        <Sagas renderingOptions={renderingOptions} model={model}/>
     </Stage>
 }
 
 /**
  *
  * @param {DiagramInformation} model
+ * @param {number} width
  * @returns {JSX.Element}
  * @constructor
  */
-function Sagas({model}) {
+function Sagas({model, renderingOptions}) {
     const sagas = model.sagas.filter(s => s.isValid(model))
     return <Layer>
         {sagas.map((s, sagaIndex) => {
@@ -146,16 +186,17 @@ function Sagas({model}) {
 
             return (
                 <Group>
-                    <Sticky text={s.name} x={calculateGridX(sagaX)} y={calculateGridY(sagaY)}/>
+                    <Sticky text={s.name} x={calculateGridX(renderingOptions, sagaX)} y={calculateGridY(sagaY)}
+                            renderingOptions={renderingOptions}/>
                     {originCoords.map(([x, y]) => {
                         return <Arrow key={`${x}-${y}`}
                                       stroke={"#FFA85D"}
                                       fill={"#FFA85D"}
                                       points={[
-                                          calculateGridX(x) + 100, calculateGridY(y),
-                                          calculateGridX(x) + 120, calculateGridY(y),
-                                          calculateGridX(sagaX) - 130, calculateGridY(sagaY),
-                                          calculateGridX(sagaX) - 110, calculateGridY(sagaY),
+                                          calculateGridX(renderingOptions, x) + 0.5 * renderingOptions.width - 2 * renderingOptions.padding, calculateGridY(y),
+                                          calculateGridX(renderingOptions, x) + 0.5 * renderingOptions.width - renderingOptions.padding, calculateGridY(y),
+                                          calculateGridX(renderingOptions, sagaX) - 0.5 * renderingOptions.width - renderingOptions.padding, calculateGridY(sagaY),
+                                          calculateGridX(renderingOptions, sagaX) - 0.5 * renderingOptions.width - renderingOptions.padding + renderingOptions.padding, calculateGridY(sagaY),
                                       ]}/>
                     })}
                     {destinationCoords.map(([x, y], index) => {
@@ -164,11 +205,11 @@ function Sagas({model}) {
                                       stroke={"#A7CDF5"}
                                       fill={"#A7CDF5"}
                                       points={[
-                                          calculateGridX(sagaX) + 110, calculateGridY(sagaY),
-                                          calculateGridX(sagaX) + 130, calculateGridY(sagaY),
-                                          calculateGridX(sagaX) + 130, calculateGridY(sagaY) + yOfLine,
-                                          calculateGridX(x), calculateGridY(sagaY) + yOfLine,
-                                          calculateGridX(x), calculateGridY(y) - 40,
+                                          calculateGridX(renderingOptions, sagaX) + 0.5 * renderingOptions.width - 2 * renderingOptions.padding, calculateGridY(sagaY),
+                                          calculateGridX(renderingOptions, sagaX) + 0.5 * renderingOptions.width - 2 * renderingOptions.padding + 20, calculateGridY(sagaY),
+                                          calculateGridX(renderingOptions, sagaX) + 0.5 * renderingOptions.width - 2 * renderingOptions.padding + 20, calculateGridY(sagaY) + yOfLine,
+                                          calculateGridX(renderingOptions, x) - renderingOptions.padding, calculateGridY(sagaY) + yOfLine,
+                                          calculateGridX(renderingOptions, x) - renderingOptions.padding, calculateGridY(y) - 40,
                                       ]}/>
 
                     })}
@@ -180,12 +221,11 @@ function Sagas({model}) {
 
 const columnWidth = 250;
 const rowHeight = 160;
-const padding = 50;
 const eventRowStart = 2;
 const commandColumnStart = 2;
 
-function calculateGridX(column) {
-    return padding + column * columnWidth + columnWidth * 0.5
+function calculateGridX(renderingOptions, column) {
+    return (column + 0.5) * (renderingOptions.width)
 }
 
 function calculateGridY(row) {
@@ -199,14 +239,15 @@ function calculateGridY(row) {
  * @returns {JSX.Element}
  * @constructor
  */
-function ContextEntities({model, context}) {
+function ContextEntities({model, context, renderingOptions}) {
     return <Group>
         {context.aggregates.map((a, index) => {
             const heightOffset = model.getOffsetY(context.name);
             return <Group key={a.name}>
                 <Sticky color={"#f6D644"}
                         text={a.name}
-                        x={calculateGridX(0)}
+                        renderingOptions={renderingOptions}
+                        x={calculateGridX(renderingOptions, 0)}
                         y={calculateGridY(heightOffset + commandColumnStart + index)}/>
             </Group>
         })}
@@ -220,7 +261,7 @@ function ContextEntities({model, context}) {
  * @returns {JSX.Element}
  * @constructor
  */
-function Context({model, context}) {
+function Context({model, context, renderingOptions}) {
     const modelWidthOffset = model.getOffsetX(context.name)
     return <Group>
         {context.aggregates.map((a, aggIndex) => {
@@ -230,17 +271,17 @@ function Context({model, context}) {
                 {a.commands.map((c) => {
                     const commandOffset = a.getWidthOffsetOfCommand(c.name, context)
                     const views = a.getCommand(c.name).getViews(context)
-                    const commandX = calculateGridX(widthOffset + commandOffset);
+                    const commandX = calculateGridX(renderingOptions, widthOffset + commandOffset);
                     const commandY = calculateGridY(1);
 
                     const viewDefinitions = views.map((v, index) => {
-                        const viewX = calculateGridX(widthOffset + index + commandOffset + 1);
+                        const viewX = calculateGridX(renderingOptions, widthOffset + index + commandOffset + 1);
                         const viewY = calculateGridY(1);
                         return {viewX, viewY, v}
                     });
 
                     const eventDefinition = c.events.map((e, index) => {
-                        const eventX = calculateGridX(widthOffset + index + commandOffset);
+                        const eventX = calculateGridX(renderingOptions, widthOffset + index + commandOffset);
                         const eventY = calculateGridY(heightOffset + eventRowStart + aggIndex);
                         return {eventX, eventY, e}
                     })
@@ -254,10 +295,10 @@ function Context({model, context}) {
                                     stroke={"#A7CDF5"}
                                     fill={"#A7CDF5"}
                                     points={[
-                                        commandX, commandY + 38,
-                                        commandX, commandY + 78,
-                                        event.eventX, commandY + 88,
-                                        event.eventX, event.eventY - 38,
+                                        commandX - renderingOptions.padding, commandY + 38,
+                                        commandX - renderingOptions.padding, commandY + 78,
+                                        event.eventX - renderingOptions.padding, commandY + 88,
+                                        event.eventX - renderingOptions.padding, event.eventY - 38,
                                     ]}/>
 
                                 {viewArrows.map(va => {
@@ -267,15 +308,16 @@ function Context({model, context}) {
                                         fill={"#FFA85D"}
                                         tension={0}
                                         points={[
-                                            event.eventX + 100, event.eventY,
-                                            event.eventX + 120, event.eventY,
-                                            event.eventX + 120, va.viewY + 68,
-                                            va.viewX, va.viewY + 68,
-                                            va.viewX, va.viewY + 38,
+                                            event.eventX + 0.5 * renderingOptions.width - renderingOptions.padding * 2, event.eventY,
+                                            event.eventX + 0.5 * renderingOptions.width - renderingOptions.padding, event.eventY,
+                                            event.eventX + 0.5 * renderingOptions.width - renderingOptions.padding, va.viewY + 68,
+                                            va.viewX - renderingOptions.padding, va.viewY + 68,
+                                            va.viewX - renderingOptions.padding, va.viewY + 38,
                                         ]}/>
                                 })}
                                 <Sticky
                                     color={"#FFA85D"}
+                                    renderingOptions={renderingOptions}
                                     x={event.eventX}
                                     y={event.eventY} text={event.e}/>
                             </Group>
@@ -283,9 +325,11 @@ function Context({model, context}) {
 
 
                         {viewDefinitions.map((v) => {
-                            return <Sticky color={"#A1D786"} key={v.name} text={v.v.name} x={v.viewX} y={v.viewY}/>
+                            return <Sticky color={"#A1D786"} key={v.name} text={v.v.name} x={v.viewX} y={v.viewY}
+                                           renderingOptions={renderingOptions}/>
                         })}
                         <Sticky color={"#A7CDF5"}
+                                renderingOptions={renderingOptions}
                                 x={commandX}
                                 y={commandY}
                                 text={c.name}/>
