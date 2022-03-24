@@ -187,6 +187,10 @@ export class DiagramInformation {
         return this.contexts.reduce((a, c) => a + c.width, 0)
     }
 
+    getHeight() {
+        return this.contexts.reduce((a, c) => a + c.height, 0)
+    }
+
     getOffsetX(name: string) {
         const item = this.contexts.find(a => a.name === name)!!
         const index = this.contexts.indexOf(item)

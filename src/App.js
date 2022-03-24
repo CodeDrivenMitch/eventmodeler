@@ -1,8 +1,7 @@
 import './App.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
-import {Col, Container, Navbar, NavbarBrand, Row} from "react-bootstrap";
-import {useState} from "react";
+import './theme.scss'
+import {Accordion, Col, Container, Navbar, NavbarBrand, Row} from "react-bootstrap";
+import {useEffect, useState} from "react";
 import {Arrow, Group, Layer, Rect, Stage, Text} from "react-konva";
 import {defaultValue} from './defaultvalue'
 import {parse} from './parser'
@@ -14,6 +13,12 @@ function App() {
     const [width, setWidth] = useState(120);
     const [padding, setPadding] = useState(10);
     const [fontSize, setFontSize] = useState(10);
+    const [windowHeight, setWindowHeight] = useState(window.innerHeight)
+    useEffect(() => {
+        window.onresize = () => {
+            setWindowHeight(window.innerHeight)
+        }
+    })
 
     const model = parse(value);
     const renderingOptions = {
@@ -25,64 +30,133 @@ function App() {
     console.log(JSON.stringify(model, null, 4))
     return (
         <div className="App">
+            <Navbar bg={"dark"} variant={"dark"}>
+                <NavbarBrand style={{marginLeft: 10}}><img alt={"Axon Logo"} height={40}
+                                                           src={"/axon_icon.svg"}/> AxonIQ Eventmodeler</NavbarBrand>
+                <Navbar.Text style={{float: 'right'}}>Brough to you by the creators of Axon Framework</Navbar.Text>
+            </Navbar>
             <Container fluid>
-                <Navbar>
-                    <NavbarBrand><img alt={"Axon Logo"} height={40}
-                                      src={"/axon_icon.svg"}/> Eventmodeler.org</NavbarBrand>
-                    <Navbar.Text style={{float: 'right'}}>Brough to you by Axon Framework</Navbar.Text>
-                </Navbar>
                 <Row>
-                    <Col style={{"textAlign": "left"}}>
-                        <p>Welcome to the Axon Framework event modeler. You can define your input on the left, which
-                            will be translated in a diagram on the right. The diagram will be updated automatically.</p>
+                    <Col md={12} style={{"textAlign": "left"}}>
 
-                        <SplitPane minSize={100} allowResize={true} primary={"first"} split={"vertical"}
-                                   defaultSize={400}>
-                            <div style={{paddingTop: 30}}>
-                                <RangeSlider
-                                    tooltipLabel={(n) => `Sticky width: ${n}px`}
-                                    value={width}
-                                    max={300}
-                                    min={50}
-                                    tooltip={"on"}
-                                    tooltipPlacement={"top"}
-                                    onChange={changeEvent => setWidth(parseInt(changeEvent.target.value))}
-                                />
-                                <RangeSlider
-                                    tooltipLabel={(n) => `Padding: ${n}px`}
-                                    value={padding}
-                                    max={50}
-                                    min={2}
-                                    tooltip={"on"}
-                                    tooltipPlacement={"top"}
-                                    onChange={changeEvent => setPadding(parseInt(changeEvent.target.value))}
-                                />
+                        <SplitPane minSize={100} allowResize={true} primary={"second"} split={"vertical"}
+                                   defaultSize={window.innerWidth - 400} maxSize={window.innerWidth}
+                                   style={{height: windowHeight - 70}}>
+                            <div style={{
+                                paddingTop: 30,
+                                overflowY: 'scroll',
+                                overflowX: 'hidden',
+                                height: windowHeight - 70
+                            }}>
+                                <Accordion defaultActiveKey={['0', '2']} alwaysOpen>
 
-                                <RangeSlider
-                                    tooltipLabel={(n) => `Font size: ${n}px`}
-                                    value={fontSize}
-                                    max={50}
-                                    min={2}
-                                    tooltip={"on"}
-                                    tooltipPlacement={"top"}
-                                    onChange={changeEvent => setFontSize(parseInt(changeEvent.target.value))}
-                                />
-                                <textarea
-                                    style={{"width": "98%", "height": "75vh", "fontSize": 14, marginRight: '100px'}}
-                                    value={value}
-                                    onChange={(e) => setValue(e.target.value)}/>
+
+                                    <Accordion.Item eventKey="2">
+                                        <Accordion.Header>Model definition</Accordion.Header>
+                                        <Accordion.Body>
+                                            <textarea
+                                                style={{
+                                                    "width": "98%",
+                                                    "height": "70vh",
+                                                    "fontSize": 14,
+                                                    marginRight: '100px'
+                                                }}
+                                                value={value}
+                                                onChange={(e) => setValue(e.target.value)}/>
+                                        </Accordion.Body>
+                                    </Accordion.Item>
+                                    <Accordion.Item eventKey="0">
+                                        <Accordion.Header>Eventmodeling Introduction</Accordion.Header>
+                                        <Accordion.Body>
+                                            <p>Eventmodeling is a great technique to explore your domain and create a
+                                                functional Domain Driven Model for your Software based on commands and
+                                                events. At AxonIQ we have a <a
+                                                    href="https://developer.axoniq.io/w/from-model-to-code-event-modeling-axon-framework">great
+                                                    introductory blog to get you started with the technique.</a></p>
+                                            <p>This tool is meant to support you using the custom DSL we created. With
+                                                this it should be easy to generate diagrams for your use-case. To get
+                                                you started, let's go through the DSL.</p>
+
+                                            <h5>Defining a context</h5>
+                                            <p>You can define a context like this:</p>
+                                            <pre>context MyContext</pre>
+                                            <p>From now on, any definition that will come after this will belong to the
+                                                MyContext context. If another context is declared, that one is now the
+                                                active one.</p>
+
+                                            <h4>Defining commands</h4>
+                                            <p>We can also define commands. These are executed on aggregates. The syntax
+                                                for declaring command X on Aggregate Y with the result of events Z1 and
+                                                Z2 are as follows:</p>
+                                            <pre>aggregate X :: Y -> Z1,Z2</pre>
+                                            <p>Instead of aggregate, you can also write agg or a as shorthands.</p>
+
+                                            <h4>Defining views</h4>
+                                            <p>To visualize in which views the events are used, we can define that view
+                                                X handles event Z1 and Z2 as follows:</p>
+                                            <pre>view X :: Z1,Z2</pre>
+                                            <p>Instead of view, you can also write v as shorthand.</p>
+
+                                            <h4>Defining sagas</h4>
+                                            <p>Lastly you can also define Sagas. Sagas start from event X and are
+                                                handled by command Y. Since this can travel between contexts, we also
+                                                need to provide the origin and target context, as follows:</p>
+                                            <pre>saga X :: originContext event -> destinationContext command</pre>
+
+                                            <h4>Aliases</h4>
+                                            <p>You can also define aliases for certain objects. This is done like this:</p>
+                                            <pre>type X Xalias</pre>
+                                            <p>So, to define an alias ma for aggregate MyAggregate:</p>
+                                            <pre>agg MyAggregate ma</pre>
+                                            <p>With this you can now type ma instead of MyAggregate anywhere in the dsl. Other examples:</p>
+                                            <pre>view Myview mv</pre>
+                                            <pre>context Booking b</pre>
+                                            <pre>agg MyAggregate ma</pre>
+                                            <pre>s MySaga s</pre>
+                                        </Accordion.Body>
+                                    </Accordion.Item>
+                                    <Accordion.Item eventKey="1">
+                                        <Accordion.Header>Rendering options</Accordion.Header>
+                                        <Accordion.Body>
+                                            <p>Sticky width</p>
+                                            <RangeSlider
+                                                value={width}
+                                                max={300}
+                                                min={50}
+                                                onChange={changeEvent => setWidth(parseInt(changeEvent.target.value))}
+                                            />
+                                            <p>Sticky padding</p>
+                                            <RangeSlider
+                                                value={padding}
+                                                max={50}
+                                                min={2}
+                                                onChange={changeEvent => setPadding(parseInt(changeEvent.target.value))}
+                                            />
+
+                                            <p>Font size</p>
+                                            <RangeSlider
+                                                value={fontSize}
+                                                max={50}
+                                                min={2}
+                                                onChange={changeEvent => setFontSize(parseInt(changeEvent.target.value))}
+                                            />
+                                        </Accordion.Body>
+                                    </Accordion.Item>
+                                </Accordion>
+
                             </div>
-                            <div>
-                                <div style={{height: "75vh", overflowX: "scroll", display: 'flex'}}>
-                                    <DiagramRendered renderingOptions={renderingOptions} model={model}/>
-                                    <DiagramEntities renderingOptions={renderingOptions} model={model}/>
-                                </div>
+                            <div style={{
+                                marginLeft: 20,
+                                height: windowHeight - 70,
+                                overflowY: 'scroll',
+                                overflowX: 'scroll',
+                                display: 'flex'
+                            }}>
+                                <DiagramEntities renderingOptions={renderingOptions} model={model}/>
+                                <DiagramRendered renderingOptions={renderingOptions} model={model}/>
                             </div>
                         </SplitPane>
                     </Col>
-                </Row>
-                <Row>
-                    <Col>This event modeling tool was brought to you by AxonIQ, creators of Axon framework. </Col>
                 </Row>
 
             </Container>
@@ -103,7 +177,7 @@ function Sticky({text, color, x, y, height = 76, fontSize = 14, renderingOptions
         />
         <Text width={textWidth}
               x={renderingOptions.textPadding}
-              y={height / 2 - fontSize }
+              y={height / 2 - fontSize}
               align={"center"}
               lineHeight={1.3}
               text={text} fontSize={renderingOptions.fontSize}
@@ -119,8 +193,8 @@ function Sticky({text, color, x, y, height = 76, fontSize = 14, renderingOptions
  * @constructor
  */
 function DiagramEntities({model, renderingOptions}) {
-    return <Stage height={0.73 * window.innerHeight} width={renderingOptions.width + renderingOptions.padding}
-                  style={{position: 'absolute', backgroundColor: 'white'}}>
+    return <Stage height={(model.getHeight() + 2) * rowHeight}
+                  width={renderingOptions.width + renderingOptions.padding}>
         <Layer>
             {model.contexts.map(c => {
                 return <ContextEntities key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
@@ -137,8 +211,7 @@ function DiagramEntities({model, renderingOptions}) {
  * @constructor
  */
 function DiagramRendered({model, renderingOptions}) {
-    return <Stage height={0.73 * window.innerHeight} width={(model.getWidth() + 2) * renderingOptions.width}
-                  style={{float: 'left', marginLeft: renderingOptions.width + renderingOptions.padding}}>
+    return <Stage height={(model.getHeight() + 2) * rowHeight} width={(model.getWidth() + 2) * renderingOptions.width}>
         <Layer>
             {model.contexts.map(c => {
                 return <Context key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
@@ -219,7 +292,6 @@ function Sagas({model, renderingOptions}) {
     </Layer>
 }
 
-const columnWidth = 250;
 const rowHeight = 160;
 const eventRowStart = 2;
 const commandColumnStart = 2;
