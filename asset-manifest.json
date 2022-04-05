@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/eventmodeler/static/css/main.2505eb37.css",
-    "main.js": "/eventmodeler/static/js/main.7eb139ee.js",
+    "main.js": "/eventmodeler/static/js/main.7e796828.js",
     "static/js/646.2f88d360.chunk.js": "/eventmodeler/static/js/646.2f88d360.chunk.js",
     "index.html": "/eventmodeler/index.html",
     "main.2505eb37.css.map": "/eventmodeler/static/css/main.2505eb37.css.map",
-    "main.7eb139ee.js.map": "/eventmodeler/static/js/main.7eb139ee.js.map",
+    "main.7e796828.js.map": "/eventmodeler/static/js/main.7e796828.js.map",
     "646.2f88d360.chunk.js.map": "/eventmodeler/static/js/646.2f88d360.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.2505eb37.css",
-    "static/js/main.7eb139ee.js"
+    "static/js/main.7e796828.js"
   ]
 }
