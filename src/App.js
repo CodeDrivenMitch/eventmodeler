@@ -1,6 +1,6 @@
 import './App.css';
 import './theme.scss'
-import {Accordion, Col, Container, Navbar, NavbarBrand, Row} from "react-bootstrap";
+import {Accordion, Col, Container, Nav, Navbar, NavbarBrand, Row} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import {Arrow, Group, Layer, Line, Rect, Stage, Text} from "react-konva";
 import {defaultValue} from './defaultvalue'
@@ -35,9 +35,19 @@ function App() {
     return (
         <div className="App">
             <Navbar bg={"dark"} variant={"dark"}>
-                <NavbarBrand style={{marginLeft: 10}}><img alt={"Axon Logo"} height={40}
-                                                           src={"axon_icon.svg"}/> AxonIQ Eventmodeler</NavbarBrand>
-                <Navbar.Text style={{float: 'right'}}>Brough to you by the creators of Axon Framework</Navbar.Text>
+                <NavbarBrand style={{marginLeft: 10, paddingRight: 50}}><img alt={"Axon Logo"} height={40}
+                                                                             src={"logo.svg"}/> AxonIQ
+                    Eventmodeler</NavbarBrand>
+                <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav>
+                        <Nav.Link href={"https://developer.axoniq.io/"}>Axon Framework</Nav.Link>
+                        <Nav.Link href={"https://start.axoniq.io/"}>AxonIQ Initializr</Nav.Link>
+                    </Nav>
+                </Navbar.Collapse>
+
+                <Navbar.Text style={{paddingRight: 20}}>Brought to you by the creators of <img height={40}
+                                                                                               src={"logo_framework.svg"}/> Axon
+                    Framework</Navbar.Text>
             </Navbar>
             <Container fluid>
                 <Row>
@@ -45,12 +55,12 @@ function App() {
 
                         <SplitPane minSize={100} allowResize={true} primary={"second"} split={"vertical"}
                                    defaultSize={window.innerWidth - 500} maxSize={window.innerWidth - 100}
-                                   style={{height: windowHeight - 70}}>
+                                   style={{height: windowHeight - 80}}>
                             <div style={{
                                 paddingTop: 30,
                                 overflowY: 'scroll',
                                 overflowX: 'hidden',
-                                height: windowHeight - 70
+                                height: windowHeight - 80
                             }}>
                                 <Accordion defaultActiveKey={['2']} alwaysOpen>
 
@@ -152,7 +162,7 @@ function App() {
                             </div>
                             <div style={{
                                 marginLeft: 20,
-                                height: windowHeight - 70,
+                                height: windowHeight - 90,
                                 overflowY: 'scroll',
                                 display: 'flex'
                             }}>
@@ -220,7 +230,7 @@ function DiagramEntities({model, renderingOptions}) {
  * @constructor
  */
 function DiagramRendered({model, renderingOptions}) {
-    const diagramWidth = (model.getWidth() + 2) * renderingOptions.width;
+    const diagramWidth = (model.getWidth() + 1) * renderingOptions.width;
     return <Stage height={(model.getHeight() + 2) * rowHeight + 10} width={diagramWidth}>
         <Sagas renderingOptions={renderingOptions} model={model}/>
         <Layer>
@@ -395,7 +405,7 @@ function Context({model, context, renderingOptions, width}) {
                                     fill={"#A7CDF5"}
                                     points={[
                                         commandX - renderingOptions.padding, commandY + 38,
-                                        commandX - renderingOptions.padding, commandY + 78,
+                                        commandX - renderingOptions.padding, commandY + 88,
                                         event.eventX - renderingOptions.padding, commandY + 88,
                                         event.eventX - renderingOptions.padding, event.eventY - 38,
                                     ]}/>
