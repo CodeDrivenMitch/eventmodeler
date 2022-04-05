@@ -44,7 +44,7 @@ function App() {
                     <Col md={12} style={{"textAlign": "left"}}>
 
                         <SplitPane minSize={100} allowResize={true} primary={"second"} split={"vertical"}
-                                   defaultSize={window.innerWidth - 400} maxSize={window.innerWidth}
+                                   defaultSize={window.innerWidth - 500} maxSize={window.innerWidth - 100}
                                    style={{height: windowHeight - 70}}>
                             <div style={{
                                 paddingTop: 30,
@@ -52,7 +52,7 @@ function App() {
                                 overflowX: 'hidden',
                                 height: windowHeight - 70
                             }}>
-                                <Accordion defaultActiveKey={['0', '2']} alwaysOpen>
+                                <Accordion defaultActiveKey={['2']} alwaysOpen>
 
 
                                     <Accordion.Item eventKey="2">
@@ -63,7 +63,6 @@ function App() {
                                                     "width": "98%",
                                                     "height": "70vh",
                                                     "fontSize": 14,
-                                                    marginRight: '100px'
                                                 }}
                                                 value={value}
                                                 onChange={(e) => setValue(e.target.value)}/>
@@ -105,7 +104,7 @@ function App() {
                                             <p>Lastly you can also define Sagas. Sagas start from event X and are
                                                 handled by command Y. Since this can travel between contexts, we also
                                                 need to provide the origin and target context, as follows:</p>
-                                            <pre>saga X :: originContext event -> destinationContext command</pre>
+                                            <pre>saga X :: contextA event -> contextB command</pre>
 
                                             <h4>Aliases</h4>
                                             <p>You can also define aliases for certain objects. This is done like
@@ -155,11 +154,12 @@ function App() {
                                 marginLeft: 20,
                                 height: windowHeight - 70,
                                 overflowY: 'scroll',
-                                overflowX: 'scroll',
                                 display: 'flex'
                             }}>
                                 <DiagramEntities renderingOptions={renderingOptions} model={model}/>
-                                <DiagramRendered renderingOptions={renderingOptions} model={model}/>
+                                <div style={{overflowX: 'scroll'}}>
+                                    <DiagramRendered renderingOptions={renderingOptions} model={model}/>
+                                </div>
                             </div>
                         </SplitPane>
                     </Col>
