@@ -2,7 +2,7 @@ import './App.css';
 import './theme.scss'
 import {Accordion, Col, Container, Navbar, NavbarBrand, Row} from "react-bootstrap";
 import {useEffect, useState} from "react";
-import {Arrow, Group, Layer, Rect, Stage, Text} from "react-konva";
+import {Arrow, Group, Layer, Line, Rect, Stage, Text} from "react-konva";
 import {defaultValue} from './defaultvalue'
 import {parse} from './parser'
 import SplitPane from "react-split-pane";
@@ -32,7 +32,7 @@ function App() {
         <div className="App">
             <Navbar bg={"dark"} variant={"dark"}>
                 <NavbarBrand style={{marginLeft: 10}}><img alt={"Axon Logo"} height={40}
-                                                           src={"/axon_icon.svg"}/> AxonIQ Eventmodeler</NavbarBrand>
+                                                           src={"axon_icon.svg"}/> AxonIQ Eventmodeler</NavbarBrand>
                 <Navbar.Text style={{float: 'right'}}>Brough to you by the creators of Axon Framework</Navbar.Text>
             </Navbar>
             <Container fluid>
@@ -104,11 +104,13 @@ function App() {
                                             <pre>saga X :: originContext event -> destinationContext command</pre>
 
                                             <h4>Aliases</h4>
-                                            <p>You can also define aliases for certain objects. This is done like this:</p>
+                                            <p>You can also define aliases for certain objects. This is done like
+                                                this:</p>
                                             <pre>type X Xalias</pre>
                                             <p>So, to define an alias ma for aggregate MyAggregate:</p>
                                             <pre>agg MyAggregate ma</pre>
-                                            <p>With this you can now type ma instead of MyAggregate anywhere in the dsl. Other examples:</p>
+                                            <p>With this you can now type ma instead of MyAggregate anywhere in the dsl.
+                                                Other examples:</p>
                                             <pre>view Myview mv</pre>
                                             <pre>context Booking b</pre>
                                             <pre>agg MyAggregate ma</pre>
@@ -193,9 +195,10 @@ function Sticky({text, color, x, y, height = 76, fontSize = 14, renderingOptions
  * @constructor
  */
 function DiagramEntities({model, renderingOptions}) {
-    return <Stage height={(model.getHeight() + 2) * rowHeight}
+    return <Stage height={(model.getHeight() + 2) * rowHeight + 10}
                   width={renderingOptions.width + renderingOptions.padding}>
         <Layer>
+            <Line points={[0, calculateGridY(eventRowStart - 0.5), 500, calculateGridY(eventRowStart - 0.5)]} stroke={"#000000"} strokeWidth={0.2} opacity={1}/>
             {model.contexts.map(c => {
                 return <ContextEntities key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
             })}
@@ -211,13 +214,16 @@ function DiagramEntities({model, renderingOptions}) {
  * @constructor
  */
 function DiagramRendered({model, renderingOptions}) {
-    return <Stage height={(model.getHeight() + 2) * rowHeight} width={(model.getWidth() + 2) * renderingOptions.width}>
+    const diagramWidth = (model.getWidth() + 2) * renderingOptions.width;
+    return <Stage height={(model.getHeight() + 2) * rowHeight+ 10} width={diagramWidth}>
+        <Sagas renderingOptions={renderingOptions} model={model}/>
         <Layer>
+            <Line points={[0, calculateGridY(eventRowStart - 0.5), diagramWidth, calculateGridY(eventRowStart - 0.5)]} stroke={"#000000"} strokeWidth={0.2} opacity={1}/>
             {model.contexts.map(c => {
-                return <Context key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
+                return <Context key={c.name} model={model} context={c} renderingOptions={renderingOptions}
+                                width={diagramWidth}/>
             })}
         </Layer>
-        <Sagas renderingOptions={renderingOptions} model={model}/>
     </Stage>
 }
 
@@ -312,15 +318,19 @@ function calculateGridY(row) {
  * @constructor
  */
 function ContextEntities({model, context, renderingOptions}) {
+    const heightOffset = model.getOffsetY(context.name);
+    const contextLineY = calculateGridY(heightOffset - 0.5 + context.aggregates.length + eventRowStart);
     return <Group>
+        <Line points={[0, contextLineY, 500, contextLineY]} stroke={"#000000"} strokeWidth={0.5} opacity={0.5}/>
         {context.aggregates.map((a, index) => {
-            const heightOffset = model.getOffsetY(context.name);
+            const lineY = calculateGridY(heightOffset + commandColumnStart + index + 0.5);
             return <Group key={a.name}>
                 <Sticky color={"#f6D644"}
                         text={a.name}
                         renderingOptions={renderingOptions}
                         x={calculateGridX(renderingOptions, 0)}
                         y={calculateGridY(heightOffset + commandColumnStart + index)}/>
+                <Line points={[0, lineY, 500, lineY]} stroke={"#000000"} strokeWidth={0.1} opacity={1}/>
             </Group>
         })}
     </Group>
@@ -333,13 +343,18 @@ function ContextEntities({model, context, renderingOptions}) {
  * @returns {JSX.Element}
  * @constructor
  */
-function Context({model, context, renderingOptions}) {
+function Context({model, context, renderingOptions, width}) {
+    const heightOffset = model.getOffsetY(context.name);
     const modelWidthOffset = model.getOffsetX(context.name)
+    const contextLineY = calculateGridY(heightOffset - 0.5 + context.aggregates.length + eventRowStart);
     return <Group>
+        <Line points={[0, contextLineY, width, contextLineY]} stroke={"#000000"} strokeWidth={0.2} opacity={1}/>
         {context.aggregates.map((a, aggIndex) => {
-            const heightOffset = model.getOffsetY(context.name);
             const widthOffset = modelWidthOffset + context.getWidthOffset(a.name)
+            const lineY = calculateGridY(heightOffset + commandColumnStart + aggIndex + 0.5);
             return <Group key={a.name}>
+                <Line points={[0, lineY, width, lineY]} stroke={"#000000"} strokeWidth={0.2}
+                      opacity={0.5}/>
                 {a.commands.map((c) => {
                     const commandOffset = a.getWidthOffsetOfCommand(c.name, context)
                     const views = a.getCommand(c.name).getViews(context)
