@@ -10,9 +10,9 @@ import RangeSlider from 'react-bootstrap-range-slider';
 
 function App() {
     const [value, setValue] = useState(defaultValue)
-    const [width, setWidth] = useState(120);
+    const [width, setWidth] = useState(200);
     const [padding, setPadding] = useState(10);
-    const [fontSize, setFontSize] = useState(10);
+    const [fontSize, setFontSize] = useState(14);
     const [windowHeight, setWindowHeight] = useState(window.innerHeight)
     useEffect(() => {
         window.onresize = () => {
@@ -25,7 +25,11 @@ function App() {
         width,
         padding,
         fontSize,
-        textPadding: 10
+        textPadding: 10,
+        lineColorContext: '#be80e5',
+        lineColorAggregate: '#f6D644',
+        lineOpacity: 0.5,
+        lineWidth: 1
     }
     console.log(JSON.stringify(model, null, 4))
     return (
@@ -198,7 +202,9 @@ function DiagramEntities({model, renderingOptions}) {
     return <Stage height={(model.getHeight() + 2) * rowHeight + 10}
                   width={renderingOptions.width + renderingOptions.padding}>
         <Layer>
-            <Line points={[0, calculateGridY(eventRowStart - 0.5), 500, calculateGridY(eventRowStart - 0.5)]} stroke={"#000000"} strokeWidth={0.2} opacity={1}/>
+            <Line points={[0, calculateGridY(eventRowStart - 0.5), 500, calculateGridY(eventRowStart - 0.5)]}
+                  stroke={renderingOptions.lineColorContext} strokeWidth={renderingOptions.lineWidth}
+                  opacity={renderingOptions.lineOpacity}/>
             {model.contexts.map(c => {
                 return <ContextEntities key={c.name} model={model} context={c} renderingOptions={renderingOptions}/>
             })}
@@ -215,10 +221,12 @@ function DiagramEntities({model, renderingOptions}) {
  */
 function DiagramRendered({model, renderingOptions}) {
     const diagramWidth = (model.getWidth() + 2) * renderingOptions.width;
-    return <Stage height={(model.getHeight() + 2) * rowHeight+ 10} width={diagramWidth}>
+    return <Stage height={(model.getHeight() + 2) * rowHeight + 10} width={diagramWidth}>
         <Sagas renderingOptions={renderingOptions} model={model}/>
         <Layer>
-            <Line points={[0, calculateGridY(eventRowStart - 0.5), diagramWidth, calculateGridY(eventRowStart - 0.5)]} stroke={"#000000"} strokeWidth={0.2} opacity={1}/>
+            <Line points={[0, calculateGridY(eventRowStart - 0.5), diagramWidth, calculateGridY(eventRowStart - 0.5)]}
+                  stroke={renderingOptions.lineColorContext} strokeWidth={renderingOptions.lineWidth}
+                  opacity={renderingOptions.lineOpacity}/>
             {model.contexts.map(c => {
                 return <Context key={c.name} model={model} context={c} renderingOptions={renderingOptions}
                                 width={diagramWidth}/>
@@ -321,16 +329,18 @@ function ContextEntities({model, context, renderingOptions}) {
     const heightOffset = model.getOffsetY(context.name);
     const contextLineY = calculateGridY(heightOffset - 0.5 + context.aggregates.length + eventRowStart);
     return <Group>
-        <Line points={[0, contextLineY, 500, contextLineY]} stroke={"#000000"} strokeWidth={0.5} opacity={0.5}/>
+        <Line points={[0, contextLineY, 500, contextLineY]} stroke={renderingOptions.lineColorContext}
+              strokeWidth={renderingOptions.lineWidth} opacity={renderingOptions.lineOpacity}/>
         {context.aggregates.map((a, index) => {
-            const lineY = calculateGridY(heightOffset + commandColumnStart + index + 0.5);
+            const lineY = calculateGridY(heightOffset + commandColumnStart + index - 0.5);
             return <Group key={a.name}>
                 <Sticky color={"#f6D644"}
                         text={a.name}
                         renderingOptions={renderingOptions}
                         x={calculateGridX(renderingOptions, 0)}
                         y={calculateGridY(heightOffset + commandColumnStart + index)}/>
-                <Line points={[0, lineY, 500, lineY]} stroke={"#000000"} strokeWidth={0.1} opacity={1}/>
+                <Line points={[0, lineY, 500, lineY]} stroke={renderingOptions.lineColorAggregate}
+                      strokeWidth={renderingOptions.lineWidth} opacity={index > 0 ? renderingOptions.lineOpacity : 0}/>
             </Group>
         })}
     </Group>
@@ -348,13 +358,15 @@ function Context({model, context, renderingOptions, width}) {
     const modelWidthOffset = model.getOffsetX(context.name)
     const contextLineY = calculateGridY(heightOffset - 0.5 + context.aggregates.length + eventRowStart);
     return <Group>
-        <Line points={[0, contextLineY, width, contextLineY]} stroke={"#000000"} strokeWidth={0.2} opacity={1}/>
+        <Line points={[0, contextLineY, width, contextLineY]} stroke={renderingOptions.lineColorContext}
+              strokeWidth={renderingOptions.lineWidth} opacity={renderingOptions.lineOpacity}/>
         {context.aggregates.map((a, aggIndex) => {
             const widthOffset = modelWidthOffset + context.getWidthOffset(a.name)
-            const lineY = calculateGridY(heightOffset + commandColumnStart + aggIndex + 0.5);
+            const lineY = calculateGridY(heightOffset + commandColumnStart + aggIndex - 0.5);
             return <Group key={a.name}>
-                <Line points={[0, lineY, width, lineY]} stroke={"#000000"} strokeWidth={0.2}
-                      opacity={0.5}/>
+                <Line points={[0, lineY, width, lineY]} stroke={renderingOptions.lineColorAggregate}
+                      strokeWidth={renderingOptions.lineWidth}
+                      opacity={aggIndex > 0 ? renderingOptions.lineOpacity : 0}/>
                 {a.commands.map((c) => {
                     const commandOffset = a.getWidthOffsetOfCommand(c.name, context)
                     const views = a.getCommand(c.name).getViews(context)
