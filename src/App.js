@@ -9,7 +9,12 @@ import SplitPane from "react-split-pane";
 import RangeSlider from 'react-bootstrap-range-slider';
 
 function App() {
-    const [value, setValue] = useState(defaultValue)
+    let initialValue = defaultValue
+    let urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.has('model')) {
+        initialValue = atob(urlParams.get('model').replace(/_/g, '/').replace(/-/g, '+'))
+    }
+    const [value, setValue] = useState(initialValue)
     const [width, setWidth] = useState(200);
     const [padding, setPadding] = useState(10);
     const [fontSize, setFontSize] = useState(14);
