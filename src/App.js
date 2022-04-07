@@ -10,9 +10,8 @@ import RangeSlider from 'react-bootstrap-range-slider';
 
 function App() {
     let initialValue = defaultValue
-    let urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.has('model')) {
-        initialValue = atob(urlParams.get('model').replace(/_/g, '/').replace(/-/g, '+'))
+    if(window.location.hash.length > 0) {
+        initialValue = atob(window.location.hash.substr(1).replace(/_/g, '/').replace(/-/g, '+'))
     }
     const [value, setValue] = useState(initialValue)
     const [width, setWidth] = useState(200);
